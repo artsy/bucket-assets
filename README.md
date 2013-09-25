@@ -2,14 +2,12 @@
 
 Uploads a folder of static assets to an s3 bucket with convenient assumptions. These assumptions include:
 
-* Uploads to a folder under a truncated git hash for naive fingerprinting and rollback purposes.
+* Uploads to a ('/assets/' + truncated git hash) folder for naive fingerprinting and rollback purposes.
 * Adds appropriate s3 headers like setting files to 'public-read' and 'Content-Type'.
 
 Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.
 
 ## Example
-
-Pass in the asset directory and 
 
 ````javascript
 var bucketAssets = require('bucket-assets');

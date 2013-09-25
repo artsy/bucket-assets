@@ -20,7 +20,8 @@
 	},
 	"dependencies": {
 	  "knox": "*",
-	  "glob": "*"
+	  "glob": "*",
+	  "underscore": "*"
 	},
   "devDependencies": {
     "mocha": "*",
