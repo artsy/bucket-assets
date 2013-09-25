@@ -20,7 +20,6 @@ module.exports = function(options) {
 
       // Generate headers
       var contentType = contentTypeMap[path.extname(filename.replace('.gz', ''))];
-      console.log(contentType, path.extname(filename.replace('.gz', '')));
       var headers = {
         'Content-Type': contentType,
         'x-amz-acl': 'public-read'
