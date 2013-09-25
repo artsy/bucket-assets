@@ -19,12 +19,12 @@ module.exports = function(options) {
     var uploadFile = function(filename) {
 
       // Generate headers
-      var ext = path.extname(filename);
+      var contentType = contentTypeMap[path.extname(filename.replace('.gz', ''))];
       var headers = {
-        'Content-Type': contentTypeMap[ext],
+        'Content-Type': contentType,
         'x-amz-acl': 'public-read'
       }
-      if(ext == '.gz') headers['Content-Encoding'] = 'gzip';
+      if(filename.match(/\.gz$/)) headers['Content-Encoding'] = 'gzip';
 
       // Upload file to s3
       var s3Path = '/assets/' + commitHash.trim() + '/' + path.relative(options.dir, filename);
@@ -34,7 +34,7 @@ module.exports = function(options) {
                         options.bucket + s3Path + ': ' + err);
         } else {
           console.warn('Uploaded ' + filename + ' to ' + 
-                        options.bucket + s3Path + '(' + contentTypeMap[ext] + ')' );
+                        options.bucket + s3Path + '(' + contentType + ')' );
           options.callback()
         }
       });
@@ -48,5 +48,5 @@ var contentTypeMap = {
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
   '.js':  'application/javascript',
-  '.ico': 'image/x-icon' 
+  '.ico': 'image/x-icon'
 };
