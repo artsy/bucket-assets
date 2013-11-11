@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var program = require('commander')
   , bucketAssets = require('../')
   , resolve = require('path').resolve;
