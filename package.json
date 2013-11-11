@@ -1,12 +1,15 @@
 {
   "name": "bucket-assets",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Uploads a folder of static assets to an s3 bucket with convenient assumptions.",
   "keywords": [
     "s3",
     "assets",
     "bucket"
   ],
+  "bin": {
+    "bucketassets": "./bin/bucketassets.js"
+  },
   "author": {
     "name": "Craig Spaeth",
     "email": "craigspaeth@gmail.com",
@@ -21,7 +24,8 @@
 	"dependencies": {
 	  "knox": "*",
 	  "glob": "*",
-	  "underscore": "*"
+	  "underscore": "*",
+    "commander": "*"
 	},
   "devDependencies": {
     "mocha": "*",
