@@ -60,8 +60,8 @@ describe('bucketAssets', function() {
       key: 'baz',
       bucket: 'flare-production'
     });
-    putFileStub.args[2][2]['Content-Type'].should.equal('application/javascript');
-    putFileStub.args[2][2]['Content-Encoding'].should.equal('gzip');
+    putFileStub.args[1][2]['Content-Type'].should.equal('application/javascript');
+    putFileStub.args[1][2]['Content-Encoding'].should.equal('gzip');
   });
   
 });
