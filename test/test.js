@@ -60,7 +60,6 @@ describe('bucketAssets', function() {
           key: 'baz',
           bucket: 'flare-production'
       });
-      console.log(putFileStub.args);
       putFileStub.args[0][2]['Cache-Control'].should.equal('max-age=315360000, public');
       putFileStub.args[1][2]['Cache-Control'].should.equal('max-age=315360000, public');
   });
