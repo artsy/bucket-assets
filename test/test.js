@@ -30,7 +30,7 @@ describe('bucketAssets', function() {
     createClientStub.args[0][0].secret.should.equal('foobar');
   });
 
-  it('puts files to the s3 bucket', function() {
+  it('puts files and non-empty folders to the s3 bucket', function() {
     bucketAssets({
       dir: __dirname + '/assets',
       secret: 'foobar',
@@ -41,6 +41,8 @@ describe('bucketAssets', function() {
     putFileStub.args[0][1].should.containEql('/assets/git-hash/app.css');
     putFileStub.args[1][0].should.containEql('test/assets/app.js');
     putFileStub.args[1][1].should.containEql('/assets/git-hash/app.js');
+    putFileStub.args[4][0].should.containEql('test/assets/folder_with_file/app.js');
+    putFileStub.args[4][1].should.containEql('/assets/git-hash/folder_with_file/app.js');
   });
 
   it('adds the proper Content-Type header', function() {
