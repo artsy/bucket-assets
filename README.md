@@ -2,7 +2,8 @@
 
 Uploads a folder of static assets to an s3 bucket with convenient assumptions. These assumptions include:
 
-* Uploads to a ('/assets/' + truncated git hash) folder for naive fingerprinting and rollback purposes.
+* Fingerprints asset package based on file contents.
+* Provides middleware to easily point to your uploaded assets
 * Adds appropriate s3 headers like setting files to 'public-read' and 'Content-Type'.
 
 Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.

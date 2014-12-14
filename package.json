@@ -21,7 +21,8 @@
 	"dependencies": {
 	  "knox": "*",
 	  "glob": "*",
-	  "underscore": "*"
+	  "underscore": "*",
+    "copy-with-content-hash": "*"
 	},
   "devDependencies": {
     "mocha": "*",
