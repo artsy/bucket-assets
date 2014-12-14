@@ -6,6 +6,18 @@ var exec = require('child_process').exec;
 var _ = require('underscore');
 
 module.exports = function(options) {
+
+  // Setup default options
+  if (!options) options = {};
+  _.defaults(options, {
+    dir: process.cwd() + glob.sync(process.cwd() + '**/*/public'),
+    key: process.env.S3_KEY,
+    secret: process.env.S3_SECRET,
+    bucket: process.env.S3_BUCKET,
+    cdnUrl: process.env.CDN_URL
+  });
+
+  // Setup S3 client, expand files, wrap callback with after
   var client = knox.createClient({
     key: options.key,
     secret: options.secret,
@@ -15,26 +27,37 @@ module.exports = function(options) {
     return fs.statSync(filename).isFile();
   });
   options.callback = _.after(files.length, options.callback || function() {});
+
+  // Find the commit hash for rollback
   exec('git rev-parse --short HEAD', function(err, commitHash) {
     var uploadFile = function(filename) {
 
       // Generate headers
-      var contentType = contentTypeMap[path.extname(filename.replace('.gz', ''))];
+      var contentType = contentTypeMap[
+        path.extname(filename.replace('.gz', '').replace('.cgz', ''))
+      ];
       var headers = {
+        'Cache-Control': 'max-age=315360000, public',
         'Content-Type': contentType,
         'x-amz-acl': 'public-read'
       }
-      if(filename.match(/\.gz$/)) headers['Content-Encoding'] = 'gzip';
+      if(filename.match(/\.gz$/) || filename.match(/\.cgz$/))
+        headers['Content-Encoding'] = 'gzip';
 
-      // Upload file to s3
-      var s3Path = '/assets/' + commitHash.trim() + '/' + path.relative(options.dir, filename);
+      // Upload files to s3
+      var s3Path = [
+        '/assets/',
+        commitHash.trim(),
+        '/',
+        path.relative(options.dir, filename)
+      ].join('');
       client.putFile(filename, s3Path, headers, function(err, res) {
         if (err) {
-          console.warn('Error uploading ' + filename + ' to ' + 
-                        options.bucket + s3Path + ': ' + err);
+          console.warn('Error uploading ' + filename + ' to ' +
+            options.bucket + s3Path + ': ' + err);
         } else {
-          console.warn('Uploaded ' + filename + ' to ' + 
-                        options.bucket + s3Path + '(' + contentType + ')' );
+          console.warn('Uploaded ' + filename + ' to ' +
+            options.bucket + s3Path + '(' + contentType + ')' );
           options.callback()
         }
       });
@@ -46,7 +69,9 @@ module.exports = function(options) {
 var contentTypeMap = {
   '.css': 'text/css',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
   '.png': 'image/png',
   '.js':  'application/javascript',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.xml': 'text/xml'
 };

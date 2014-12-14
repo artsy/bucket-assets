@@ -1,10 +1,11 @@
 var rewire = require('rewire');
 var bucketAssets = rewire('../');
 var sinon = require('sinon');
+var should = require('should');
 
 describe('bucketAssets', function() {
   var putFileStub, createClientStub;
-  
+
   beforeEach(function() {
     putFileStub = sinon.stub();
     createClientStub = sinon.stub();
@@ -16,7 +17,7 @@ describe('bucketAssets', function() {
       callback(null, 'git-hash');
     });
   });
-  
+
   it('passes on options to knox', function() {
     bucketAssets({
       dir: __dirname + '/assets',
@@ -28,20 +29,22 @@ describe('bucketAssets', function() {
     createClientStub.args[0][0].bucket.should.equal('flare-production');
     createClientStub.args[0][0].secret.should.equal('foobar');
   });
-  
-  it('puts files to the s3 bucket', function() {
+
+  it('puts files and non-empty folders to the s3 bucket', function() {
     bucketAssets({
       dir: __dirname + '/assets',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
-    putFileStub.args[0][0].should.include('test/assets/app.css');
-    putFileStub.args[0][1].should.include('/assets/git-hash/app.css');
-    putFileStub.args[1][0].should.include('test/assets/app.js');
-    putFileStub.args[1][1].should.include('/assets/git-hash/app.js');
+    putFileStub.args[0][0].should.containEql('test/assets/app.css');
+    putFileStub.args[0][1].should.containEql('/assets/git-hash/app.css');
+    putFileStub.args[1][0].should.containEql('test/assets/app.js');
+    putFileStub.args[1][1].should.containEql('/assets/git-hash/app.js');
+    putFileStub.args[4][0].should.containEql('test/assets/folder_with_file/app.js');
+    putFileStub.args[4][1].should.containEql('/assets/git-hash/folder_with_file/app.js');
   });
-  
+
   it('adds the proper Content-Type header', function() {
     bucketAssets({
       dir: __dirname + '/assets',
@@ -52,8 +55,19 @@ describe('bucketAssets', function() {
     putFileStub.args[0][2]['Content-Type'].should.equal('text/css');
     putFileStub.args[1][2]['Content-Type'].should.equal('application/javascript');
   });
-  
-  it('sends gzipped files with Content-Encoding and the underyling Content-Type', function() {
+
+  it('adds the proper Max-Age header', function() {
+      bucketAssets({
+          dir: __dirname + '/assets',
+          secret: 'foobar',
+          key: 'baz',
+          bucket: 'flare-production'
+      });
+      putFileStub.args[0][2]['Cache-Control'].should.equal('max-age=315360000, public');
+      putFileStub.args[1][2]['Cache-Control'].should.equal('max-age=315360000, public');
+  });
+
+  it('sends gzipped files under gz or cgz with Content-Encoding and the underyling Content-Type', function() {
     bucketAssets({
       dir: __dirname + '/assets',
       secret: 'foobar',
@@ -62,6 +76,8 @@ describe('bucketAssets', function() {
     });
     putFileStub.args[2][2]['Content-Type'].should.equal('application/javascript');
     putFileStub.args[2][2]['Content-Encoding'].should.equal('gzip');
+    putFileStub.args[3][2]['Content-Type'].should.equal('application/javascript');
+    putFileStub.args[3][2]['Content-Encoding'].should.equal('gzip');
   });
-  
+
 });
