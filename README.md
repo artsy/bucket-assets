@@ -14,7 +14,7 @@ Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.
 Run the CLI in your deployment process. (You may omit these arguments if you use the defaults below.)
 
 ````
-node_modules/.bin/bucketassets --dir public/assets --secret s3-secret --key s3-key --bucket force-production
+node_modules/.bin/bucketassets --files **/*/public/**/* --secret s3-secret --key s3-key --bucket force-production
 ````
 
 Add the middleware to your app
@@ -22,11 +22,13 @@ Add the middleware to your app
 ````javascript
 var bucketAssets = require('bucket-assets');
 app.use(bucketAssets.middleware({
-  dir: __dirname + '/public/assets', // Defaults to finding all "public" folders that are children of process.cwd() e.g. /public + /components/modal/public
+  // A glob string that defaults to finding all files in "public" folders that are children of
+  //process.cwd() e.g. /public + /components/modal/public
+  files: __dirname + '/**/*/public/**/*',
   key: 's3-key', // Defaults to process.env.S3_KEY
   secret: 's3-secret', // Defaults to process.env.S3_SECRET
   bucket: 'force-production', // Defaults to process.env.S3_BUCKET
-  cdnUrl: '//xyz.cloudfront.net/assets' // Defaults to process.env.CDN_URL
+  cdnUrl: '//xyz.cloudfront.net/' // Defaults to process.env.CDN_URL
 }));
 ````
 
@@ -34,9 +36,9 @@ This provides the view helper to point to the fingerprinted CDN assets if proces
 
 ````jade
 head
-  link( type='text/css', rel='stylesheet', href=asset('/main.css') )
+  link( type='text/css', rel='stylesheet', href=asset('main.css') )
 body
-  script( src=asset('/main.js') )
+  script( src=asset('main.js') )
 ````
 
 ## Contributing

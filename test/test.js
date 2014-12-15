@@ -4,12 +4,17 @@ var sinon = require('sinon');
 var should = require('should');
 
 describe('bucketAssets', function() {
-  var putFileStub, createClientStub;
+  var putFileStub, createClientStub, putBufferStub;
 
   beforeEach(function() {
     putFileStub = sinon.stub();
+    putBufferStub = sinon.stub();
+
     createClientStub = sinon.stub();
-    createClientStub.returns({ putFile: putFileStub });
+    createClientStub.returns({
+      putFile: putFileStub,
+      putBuffer: putBufferStub
+    });
     bucketAssets.__set__('knox', {
       createClient: createClientStub
     });
@@ -20,7 +25,7 @@ describe('bucketAssets', function() {
 
   it('passes on options to knox', function() {
     bucketAssets({
-      dir: __dirname + '/assets',
+      files: __dirname + '/assets/**/*',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
@@ -32,52 +37,81 @@ describe('bucketAssets', function() {
 
   it('puts files and non-empty folders to the s3 bucket', function() {
     bucketAssets({
-      dir: __dirname + '/assets',
+      files: __dirname + '/assets/**/*',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
-    putFileStub.args[0][0].should.containEql('test/assets/app.css');
-    putFileStub.args[0][1].should.containEql('/assets/git-hash/app.css');
+    putBufferStub.args[0][3]();
+    putFileStub.args[0][0].should.containEql('test/assets/app-c1920422.css');
+    putFileStub.args[0][1].should.containEql('/app.css');
     putFileStub.args[1][0].should.containEql('test/assets/app.js');
-    putFileStub.args[1][1].should.containEql('/assets/git-hash/app.js');
+    putFileStub.args[1][1].should.containEql('/app.js');
     putFileStub.args[4][0].should.containEql('test/assets/folder_with_file/app.js');
-    putFileStub.args[4][1].should.containEql('/assets/git-hash/folder_with_file/app.js');
+    putFileStub.args[4][1].should.containEql('/folder_with_file/app.js');
   });
 
   it('adds the proper Content-Type header', function() {
     bucketAssets({
-      dir: __dirname + '/assets',
+      files: __dirname + '/assets/**/*',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
+    putBufferStub.args[0][3]();
     putFileStub.args[0][2]['Content-Type'].should.equal('text/css');
     putFileStub.args[1][2]['Content-Type'].should.equal('application/javascript');
   });
 
   it('adds the proper Max-Age header', function() {
       bucketAssets({
-          dir: __dirname + '/assets',
+          files: __dirname + '/assets/**/*',
           secret: 'foobar',
           key: 'baz',
           bucket: 'flare-production'
       });
+      putBufferStub.args[0][3]();
       putFileStub.args[0][2]['Cache-Control'].should.equal('max-age=315360000, public');
       putFileStub.args[1][2]['Cache-Control'].should.equal('max-age=315360000, public');
   });
 
   it('sends gzipped files under gz or cgz with Content-Encoding and the underyling Content-Type', function() {
     bucketAssets({
-      dir: __dirname + '/assets',
+      files: __dirname + '/assets/**/*',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
+    putBufferStub.args[0][3]();
     putFileStub.args[2][2]['Content-Type'].should.equal('application/javascript');
     putFileStub.args[2][2]['Content-Encoding'].should.equal('gzip');
     putFileStub.args[3][2]['Content-Type'].should.equal('application/javascript');
     putFileStub.args[3][2]['Content-Encoding'].should.equal('gzip');
   });
 
+  it('uploads a manifest of fingerprinted files', function() {
+    bucketAssets({
+      files: __dirname + '/app/**/*',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production'
+    });
+    var manifest = JSON.parse(putBufferStub.args[0][0]);
+    manifest['/bar.js'].should.equal('/bar-9b57f0be.js');
+    manifest['/foo.js'].should.equal('/foo-190774dc.js');
+    manifest['/baz.js'].should.equal('/baz-842ebc9d.js');
+  });
+
+  it('can join files from all sorts of public folders', function() {
+    bucketAssets({
+      files: __dirname + '/app/**/*',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production'
+    });
+    putBufferStub.args[0][3]();
+    putFileStub.args[0][1].should.equal('/bar.js');
+    putFileStub.args[1][1].should.equal('/foo.js');
+    putFileStub.args[2][1].should.equal('/baz.js');
+  });
 });
