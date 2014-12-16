@@ -1,19 +1,23 @@
-var rewire = require('rewire');
-var bucketAssets = rewire('../');
-var sinon = require('sinon');
-var should = require('should');
+var rewire = require('rewire'),
+    bucketAssets = rewire('../'),
+    sinon = require('sinon'),
+    should = require('should'),
+    EventEmitter = require('events').EventEmitter;
 
 describe('bucketAssets', function() {
-  var putFileStub, createClientStub, putBufferStub;
+
+  var putFileStub, createClientStub, putBufferStub, getFileStub;
 
   beforeEach(function() {
     putFileStub = sinon.stub();
     putBufferStub = sinon.stub();
+    getFileStub = sinon.stub();
 
     createClientStub = sinon.stub();
     createClientStub.returns({
       putFile: putFileStub,
-      putBuffer: putBufferStub
+      putBuffer: putBufferStub,
+      getFile: getFileStub
     });
     bucketAssets.__set__('knox', {
       createClient: createClientStub
@@ -129,5 +133,46 @@ describe('bucketAssets', function() {
     putFileStub.args[0][1].should.equal('/bar-9b57f0be.js');
     putFileStub.args[1][1].should.equal('/foo-190774dc.js');
     putFileStub.args[2][1].should.equal('/baz-842ebc9d.js');
+  });
+
+  context('middleware', function() {
+
+    var req, res, next;
+
+    beforeEach(function() {
+      req = {};
+      res = { locals: {} };
+      next = sinon.stub();
+    });
+
+    it('noops for dev', function() {
+      bucketAssets()(req, res, next);
+      res.locals.asset('/foo.js').should.equal('/foo.js');
+      next.called.should.be.ok;
+    });
+
+    it('fetches the manifest and when finished provides a ' +
+       'fingerprinting view helper', function() {
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
+      var emitter = new EventEmitter();
+      next.called.should.not.be.ok
+      getFileStub.args[0][1](null, emitter);
+      emitter.emit('data', JSON.stringify({ '/foo.js': '/foo-123.js' }));
+      emitter.emit('end');
+      next.called.should.be.ok
+      res.locals.asset('/foo.js').should.equal('http://cdn.com/foo-123.js');
+    });
+
+    it('catches S3 errors', function() {
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
+      var emitter = new EventEmitter();
+      getFileStub.args[0][1](null, emitter);
+      emitter.emit('data', "<error>Thanks for the XML!</error>");
+      emitter.emit('end');
+      next.args[0][0].toString()
+        .should.equal('SyntaxError: Unexpected token <');
+    });
   });
 });

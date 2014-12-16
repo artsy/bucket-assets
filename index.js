@@ -4,7 +4,8 @@ var path = require('path'),
     knox = require('knox'),
     exec = require('child_process').exec,
     _ = require('underscore'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    NODE_ENV = process.env.NODE_ENV;
 
 // Middleware to find your uploaded assets based on git hash & uploaded manifest.
 //
@@ -13,12 +14,13 @@ var path = require('path'),
 module.exports = function(options) {
 
   // If it's not production or staging, just return the noop view helper
-  if (process.env.NODE_ENV != 'staging' && process.env.NODE_ENV != 'production')
+  if (NODE_ENV != 'staging' && NODE_ENV != 'production')
     return function(req, res, next) {
       res.locals.asset = function(filename) { return filename };
       next();
     }
 
+  // Setup callbacks so we can queue requets until we've got the manifest.
   var manifest, opts, manifestErr, manifestCallbacks = [];
   var onManifestFetched = function(callback) {
     manifestCallbacks.push(callback);
@@ -48,8 +50,8 @@ module.exports = function(options) {
     });
   });
 
-  // Middleware to qeue up requests until the manifest is fetch.
-  // Once it is, attach a helper to lookup the file in the manifest or noop.
+  // Once the manifest is fetched attach a helper to lookup the file in the
+  // manifest or noop.
   return function(req, res, next) {
     if (manifestErr) return next(manifestErr);
     res.locals.asset = function(filename) {
