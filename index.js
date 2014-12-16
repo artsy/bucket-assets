@@ -5,7 +5,8 @@ var path = require('path'),
     exec = require('child_process').exec,
     _ = require('underscore'),
     crypto = require('crypto'),
-    NODE_ENV = process.env.NODE_ENV;
+    NODE_ENV = process.env.NODE_ENV,
+    COMMIT_HASH = process.env.COMMIT_HASH;
 
 // Middleware to find your uploaded assets based on git hash & uploaded manifest.
 //
@@ -157,6 +158,7 @@ var setup = function(options, callback) {
     secret: options.secret,
     bucket: options.bucket
   });
+  if (COMMIT_HASH) return callback(null, options, client, COMMIT_HASH);
   exec('git rev-parse --short HEAD', function(err, gitHash) {
     callback(err, options, client, gitHash);
   });

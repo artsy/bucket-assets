@@ -3,7 +3,7 @@
 Uploads a folder of static assets to an s3 bucket with convenient features. These include:
 
 * Fingerprints asset package based on file contents
-* Uploads a manifest file that stores a git hash to make rollback easy
+* Uploads a manifest file that stores a git hash to make rollback easy (first checks for the COMMIT_HASH env variable then runs a `git rev-parse HEAD`)
 * Provides middleware to easily point to your uploaded assets
 * Adds appropriate s3 headers like setting files to 'public-read' and 'Content-Type'.
 
