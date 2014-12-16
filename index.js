@@ -44,7 +44,7 @@ module.exports = function(options) {
           manifest = JSON.parse(Buffer.concat(bufs).toString());
           manifestCallback();
         } catch (err) {
-          console.warn(options, Buffer.concat(bufs).toString());
+          console.warn(Buffer.concat(bufs).toString());
           manifestCallback(manifestErr = err);
         }
       });
