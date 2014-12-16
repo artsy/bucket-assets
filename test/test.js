@@ -122,7 +122,8 @@ describe('bucketAssets', function() {
     manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app-72f6c492.js');
   });
 
-  it('can join files from all sorts of public folders', function() {
+  it('can join files from all sorts of public' +
+     ' folders except in node_modules', function() {
     bucketAssets.upload({
       files: __dirname + '/app/**/public/**',
       secret: 'foobar',
