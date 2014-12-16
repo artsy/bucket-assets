@@ -175,5 +175,18 @@ describe('bucketAssets', function() {
       next.args[0][0].toString()
         .should.equal('SyntaxError: Unexpected token <');
     });
+
+    it('tries to find the manifest by git hash', function() {
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets(req, res, next);
+      getFileStub.args[0][0].should.equal('/manifest-git-hash.json');
+    });
+
+    it('first tries to find the manifest by a COMMIT_HASH env var', function() {
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets.__set__('COMMIT_HASH', 'mashy-hasie');
+      bucketAssets(req, res, next);
+      getFileStub.args[0][0].should.equal('/manifest-mashy-hasie.json');
+    });
   });
 });
