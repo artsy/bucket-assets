@@ -11,30 +11,51 @@ var path = require('path'),
 // @param {Object} options See README.md for details
 
 module.exports = function(options) {
-  var manifest = {}, opts;
+
+  // If it's not production or staging, just return the noop view helper
+  if (process.env.NODE_ENV != 'staging' && process.env.NODE_ENV != 'production')
+    return function(req, res, next) {
+      res.locals.asset = function(filename) { return filename };
+      next();
+    }
+
+  var manifest, opts, manifestErr, manifestCallbacks = [];
+  var onManifestFetched = function(callback) {
+    manifestCallbacks.push(callback);
+  };
+  var manifestCallback = function(err) {
+    manifestCallbacks.forEach(function(callback) {
+      callback(err);
+    });
+  }
 
   // Fetch the manifest
   setup(options, function(err, options, client, gitHash) {
     opts = options;
-
-    if (err) return options.callback(err);
+    if (err) return manifestCallback(manifestErr = err);
     client.getFile('/manifest-' + gitHash.trim() + '.json', function(err, res) {
-      if (err) return options.callback(err);
+      if (err) return manifestCallback(manifestErr = err);
       var bufs = [];
       res.on('data', function(d) { bufs.push(d); });
       res.on('end', function() {
-        manifest = JSON.parse(Buffer.concat(bufs).toString());
-
+        try {
+          manifest = JSON.parse(Buffer.concat(bufs).toString());
+          manifestCallback();
+        } catch (err) {
+          manifestCallback(manifestErr = err);
+        }
       });
     });
   });
 
-  // Middleware to lookup file in manifest or noop
+  // Middleware to qeue up requests until the manifest is fetch.
+  // Once it is, attach a helper to lookup the file in the manifest or noop.
   return function(req, res, next) {
+    if (manifestErr) return next(manifestErr);
     res.locals.asset = function(filename) {
       return manifest[filename] ? opts.cdnUrl + manifest[filename] : filename;
     }
-    next();
+    manifest ? next() : onManifestFetched(next);
   }
 };
 
