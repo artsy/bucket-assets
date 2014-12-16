@@ -44,6 +44,7 @@ module.exports = function(options) {
           manifest = JSON.parse(Buffer.concat(bufs).toString());
           manifestCallback();
         } catch (err) {
+          console.warn(options, Buffer.concat(bufs).toString());
           manifestCallback(manifestErr = err);
         }
       });
@@ -69,7 +70,9 @@ module.exports.upload = function(options) {
   setup(options, function(err, options, client, gitHash) {
     if (err) return options.callback(err);
 
-    var files = glob.sync(options.files, { nodir: true });
+    var files = glob.sync(options.files, { nodir: true }).filter(function(f) {
+      return !f.match('node_modules');
+    });
 
     // Create a manifest of fingerprinted JS/CSS
     var manifest = {};

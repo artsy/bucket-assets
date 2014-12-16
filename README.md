@@ -29,7 +29,8 @@ var bucketAssets = require('bucket-assets');
 app.use(bucketAssets({
 
   // Glob that defaults to finding all files in "public" folders that
-  // are children of process.cwd() e.g. /public + /components/modal/public
+  // are children of process.cwd() e.g. /public + /components/modal/public.
+  // Will always ignore public folders in node_modules.
   files: __dirname + '/**/public/**',
 
   // Defaults to "public". The name of the folder that is the root static
