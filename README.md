@@ -28,9 +28,9 @@ Add the middleware to your app
 var bucketAssets = require('bucket-assets');
 app.use(bucketAssets({
 
-  // A glob string that defaults to finding all files in "public" folders that
+  // Glob that defaults to finding all files in "public" folders that
   // are children of process.cwd() e.g. /public + /components/modal/public
-  files: __dirname + '/**/*/public/**/*',
+  files: __dirname + '/**/public/**',
 
   // Defaults to "public". The name of the folder that is the root static
   // directory so relative paths work the same locally as they do on the CDN.
