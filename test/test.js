@@ -24,8 +24,9 @@ describe('bucketAssets', function() {
   });
 
   it('passes on options to knox', function() {
-    bucketAssets({
+    bucketAssets.upload({
       files: __dirname + '/assets/**/*',
+      root: 'assets',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
@@ -36,24 +37,26 @@ describe('bucketAssets', function() {
   });
 
   it('puts files and non-empty folders to the s3 bucket', function() {
-    bucketAssets({
+    bucketAssets.upload({
       files: __dirname + '/assets/**/*',
+      root: 'assets',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
     putBufferStub.args[0][3]();
-    putFileStub.args[0][0].should.containEql('test/assets/app-c1920422.css');
-    putFileStub.args[0][1].should.containEql('/app.css');
+    putFileStub.args[0][0].should.containEql('test/assets/app.css');
+    putFileStub.args[0][1].should.containEql('/app-c1920422.css');
     putFileStub.args[1][0].should.containEql('test/assets/app.js');
-    putFileStub.args[1][1].should.containEql('/app.js');
+    putFileStub.args[1][1].should.containEql('/app-72f6c492.js');
     putFileStub.args[4][0].should.containEql('test/assets/folder_with_file/app.js');
-    putFileStub.args[4][1].should.containEql('/folder_with_file/app.js');
+    putFileStub.args[4][1].should.containEql('/folder_with_file/app-72f6c492.js');
   });
 
   it('adds the proper Content-Type header', function() {
-    bucketAssets({
+    bucketAssets.upload({
       files: __dirname + '/assets/**/*',
+      root: 'assets',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
@@ -64,8 +67,9 @@ describe('bucketAssets', function() {
   });
 
   it('adds the proper Max-Age header', function() {
-      bucketAssets({
+      bucketAssets.upload({
           files: __dirname + '/assets/**/*',
+          root: 'assets',
           secret: 'foobar',
           key: 'baz',
           bucket: 'flare-production'
@@ -76,8 +80,9 @@ describe('bucketAssets', function() {
   });
 
   it('sends gzipped files under gz or cgz with Content-Encoding and the underyling Content-Type', function() {
-    bucketAssets({
+    bucketAssets.upload({
       files: __dirname + '/assets/**/*',
+      root: 'assets',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
@@ -90,8 +95,7 @@ describe('bucketAssets', function() {
   });
 
   it('uploads a manifest of fingerprinted files', function() {
-    bucketAssets({
-      files: __dirname + '/app/**/*',
+    bucketAssets.upload({
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
@@ -102,16 +106,28 @@ describe('bucketAssets', function() {
     manifest['/baz.js'].should.equal('/baz-842ebc9d.js');
   });
 
+  it('uploads a manifest of fingerprinted files retaining sub-folders', function() {
+    bucketAssets.upload({
+      files: __dirname + '/assets/**/*',
+      root: 'assets',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production'
+    });
+    var manifest = JSON.parse(putBufferStub.args[0][0]);
+    manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app-72f6c492.js');
+  });
+
   it('can join files from all sorts of public folders', function() {
-    bucketAssets({
-      files: __dirname + '/app/**/*',
+    bucketAssets.upload({
+      files: __dirname + '/app/**/public/**',
       secret: 'foobar',
       key: 'baz',
       bucket: 'flare-production'
     });
     putBufferStub.args[0][3]();
-    putFileStub.args[0][1].should.equal('/bar.js');
-    putFileStub.args[1][1].should.equal('/foo.js');
-    putFileStub.args[2][1].should.equal('/baz.js');
+    putFileStub.args[0][1].should.equal('/bar-9b57f0be.js');
+    putFileStub.args[1][1].should.equal('/foo-190774dc.js');
+    putFileStub.args[2][1].should.equal('/baz-842ebc9d.js');
   });
 });

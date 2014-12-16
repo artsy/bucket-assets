@@ -6,26 +6,47 @@ var path = require('path'),
     _ = require('underscore'),
     crypto = require('crypto');
 
+// Middleware to find your uploaded assets based on git hash & uploaded manifest.
+//
+// @param {Object} options See README.md for details
+
 module.exports = function(options) {
+  var manifest = {}, opts;
 
-  // Setup default options, S3 client, and expand glob
-  if (!options) options = {};
-  _.defaults(options, {
-    files: process.cwd() + '**/*/public/**/*',
-    key: process.env.S3_KEY,
-    secret: process.env.S3_SECRET,
-    bucket: process.env.S3_BUCKET,
-    cdnUrl: process.env.CDN_URL
-  });
-  var client = knox.createClient({
-    key: options.key,
-    secret: options.secret,
-    bucket: options.bucket
-  });
-  var files = glob.sync(options.files, { nodir: true });
+  // Fetch the manifest
+  setup(options, function(err, options, client, gitHash) {
+    opts = options;
 
-  // Find the commit hash for rollback
-  exec('git rev-parse --short HEAD', function(err, commitHash) {
+    if (err) return options.callback(err);
+    client.getFile('/manifest-' + gitHash.trim() + '.json', function(err, res) {
+      if (err) return options.callback(err);
+      var bufs = [];
+      res.on('data', function(d) { bufs.push(d); });
+      res.on('end', function() {
+        manifest = JSON.parse(Buffer.concat(bufs).toString());
+
+      });
+    });
+  });
+
+  // Middleware to lookup file in manifest or noop
+  return function(req, res, next) {
+    res.locals.asset = function(filename) {
+      return manifest[filename] ? opts.cdnUrl + manifest[filename] : filename;
+    }
+    next();
+  }
+};
+
+// Uploads to S3 based on options passed in.
+//
+// @param {Object} options See README.md for details
+
+module.exports.upload = function(options) {
+  setup(options, function(err, options, client, gitHash) {
+    if (err) return options.callback(err);
+
+    var files = glob.sync(options.files, { nodir: true });
 
     // Create a manifest of fingerprinted JS/CSS
     var manifest = {};
@@ -36,16 +57,19 @@ module.exports = function(options) {
       var hash = crypto.createHash('sha1')
         .update(contents).digest('hex').slice(0, 8);
       var fingerprintedFilename = path.basename(file, ext) + '-' + hash + ext;
-      manifest[_.last(file.split('public'))] = '/' + fingerprintedFilename;
+      var key = _.last(file.split(options.root));
+      manifest[key] = path.join(path.dirname(key), fingerprintedFilename);
     });
 
     // Upload the manifest
+    var manifestDest = '/manifest-' + gitHash.trim() + '.json';
     client.putBuffer(
       JSON.stringify(manifest),
-      '/manifest-' + commitHash + '.json',
+      manifestDest,
       { 'Cache-Control': 'max-age=315360000, public' },
       function(err) {
-        if (err) return options.error(err);
+        console.log('Uploaded manifest to ' + options.bucket + manifestDest);
+        if (err) return options.callback(err);
 
         // Upload each file to S3
         options.callback = _.after(
@@ -67,15 +91,15 @@ module.exports = function(options) {
             headers['Content-Encoding'] = 'gzip';
 
           // Upload file
-          var s3Path = _.last(filename.split('public'));
+          var s3Path = _.last(filename.split(options.root));
           if (manifest[s3Path]) s3Path = manifest[s3Path];
           client.putFile(filename, s3Path, headers, function(err, res) {
             if (err) {
               console.warn('Error uploading ' + filename + ' to ' +
                 options.bucket + s3Path + ': ' + err);
             } else {
-              console.warn('Uploaded ' + filename + ' to ' +
-                options.bucket + s3Path + '(' + contentType + ')' );
+              console.log('Uploaded ' + filename + ' to ' +
+                options.bucket + s3Path + ' (' + contentType + ')' );
               options.callback()
             }
           });
@@ -83,7 +107,34 @@ module.exports = function(options) {
       }
     );
   });
-}
+};
+
+// Common setup whether using middleware or CLI.
+// Sets defaults on options, creates a knox client, and retrieves the current
+// git hash.
+//
+// @param {Object} options
+// @param {Function} callback Calls back with (err, options, client, gitHash)
+
+var setup = function(options, callback) {
+  if (!options) options = {};
+  var options = _.clone(_.defaults(options, {
+    files: process.cwd() + '/**/public/**',
+    root: 'public',
+    key: process.env.S3_KEY,
+    secret: process.env.S3_SECRET,
+    bucket: process.env.S3_BUCKET,
+    cdnUrl: process.env.CDN_URL
+  }));
+  var client = knox.createClient({
+    key: options.key,
+    secret: options.secret,
+    bucket: options.bucket
+  });
+  exec('git rev-parse --short HEAD', function(err, gitHash) {
+    callback(err, options, client, gitHash);
+  });
+};
 
 var contentTypeMap = {
   '.css': 'text/css',

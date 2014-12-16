@@ -14,17 +14,18 @@ Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.
 Run the CLI in your deployment process. (You may omit these arguments if you use the defaults below.)
 
 ````
-node_modules/.bin/bucketassets --files **/*/public/**/* --secret s3-secret --key s3-key --bucket force-production
+node_modules/.bin/bucketassets --files **/public/** --secret s3-secret --key s3-key --bucket force-production
 ````
 
 Add the middleware to your app
 
 ````javascript
 var bucketAssets = require('bucket-assets');
-app.use(bucketAssets.middleware({
+app.use(bucketAssets({
   // A glob string that defaults to finding all files in "public" folders that are children of
   //process.cwd() e.g. /public + /components/modal/public
   files: __dirname + '/**/*/public/**/*',
+  root: 'public', // Defaults to "public". The name of the folder that is the root static directory so relative paths work the same locally as they do on the CDN.
   key: 's3-key', // Defaults to process.env.S3_KEY
   secret: 's3-secret', // Defaults to process.env.S3_SECRET
   bucket: 'force-production', // Defaults to process.env.S3_BUCKET

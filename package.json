@@ -41,6 +41,8 @@
     "mocha": "*",
     "should": "*",
     "rewire": "*",
-    "sinon": "*"
+    "sinon": "*",
+    "express": "*",
+    "jade": "*"
   }
 }

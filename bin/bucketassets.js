@@ -5,24 +5,17 @@ var program = require('commander')
   , resolve = require('path').resolve;
 
 program
-  .version('0.0.3')
-  .option('-d, --dir [folder]', 'Directory to assets e.g. public/assets')
+  .version('0.1.0')
+  .option('-f, --files [files]', 'Glob to asset files e.g. public/**')
+  .option('-r, --root [root]', 'Root folder name e.g. "public"')
   .option('-k, --key [key]', 'S3 Key')
   .option('-s, --secret [secret]', 'S3 Secret')
   .option('-b, --bucket [name]', 'S3 Bucket name')
   .parse(process.argv);
 
-if(!program.dir) {
-  console.warn("You must specify a directory of assets.");
-  return process.exit(1);
-}
-
-var dir = resolve(process.cwd(), program.dir);
-
-console.log('Uploading ' + dir + ' to ' + program.bucket + '...')
-
-bucketAssets({
-  dir: dir,
+bucketAssets.upload({
+  files: program.files,
+  root: program.root,
   key: program.secret,
   secret: program.secret,
   bucket: program.bucket,
