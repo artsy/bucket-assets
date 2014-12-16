@@ -11,10 +11,15 @@ Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.
 
 ## Example
 
-Run the CLI in your deployment process. (You may omit these arguments if you use the defaults below.)
+Run the CLI in your deployment process.
+_You may omit these arguments if you use the defaults below._
 
 ````
-node_modules/.bin/bucketassets --files **/public/** --secret s3-secret --key s3-key --bucket force-production
+bucketassets \
+  --files **/public/** \
+  --secret s3-secret \
+  --key s3-key \
+  --bucket force-production \
 ````
 
 Add the middleware to your app
@@ -22,18 +27,30 @@ Add the middleware to your app
 ````javascript
 var bucketAssets = require('bucket-assets');
 app.use(bucketAssets({
-  // A glob string that defaults to finding all files in "public" folders that are children of
-  //process.cwd() e.g. /public + /components/modal/public
+
+  // A glob string that defaults to finding all files in "public" folders that
+  // are children of process.cwd() e.g. /public + /components/modal/public
   files: __dirname + '/**/*/public/**/*',
-  root: 'public', // Defaults to "public". The name of the folder that is the root static directory so relative paths work the same locally as they do on the CDN.
-  key: 's3-key', // Defaults to process.env.S3_KEY
-  secret: 's3-secret', // Defaults to process.env.S3_SECRET
-  bucket: 'force-production', // Defaults to process.env.S3_BUCKET
-  cdnUrl: '//xyz.cloudfront.net/' // Defaults to process.env.CDN_URL
+
+  // Defaults to "public". The name of the folder that is the root static
+  // directory so relative paths work the same locally as they do on the CDN.
+  root: 'public',
+
+  // Defaults to process.env.S3_KEY
+  key: 's3-key',
+
+  // Defaults to process.env.S3_SECRET
+  secret: 's3-secret',
+
+  // Defaults to process.env.S3_BUCKET
+  bucket: 'force-production',
+
+  // Defaults to process.env.CDN_URL
+  cdnUrl: '//xyz.cloudfront.net/'
 }));
 ````
 
-This provides the view helper to point to the fingerprinted CDN assets if process.env.NODE_ENV=production or process.env.NODE_ENV=staging, otherwise it'll act as a noop that just returns the passed in string.
+Use the view helper to point to the fingerprinted CDN assets in production or staging.
 
 ````jade
 head
