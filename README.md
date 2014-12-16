@@ -1,32 +1,45 @@
 # bucket-assets
 
-Uploads a folder of static assets to an s3 bucket with convenient assumptions. These assumptions include:
+Uploads a folder of static assets to an s3 bucket with convenient features. These include:
 
-* Uploads to a ('/assets/' + truncated git hash) folder for naive fingerprinting and rollback purposes.
+* Fingerprints asset package based on file contents
+* Uploads a manifest file that stores a git hash to make rollback easy
+* Provides middleware to easily point to your uploaded assets
 * Adds appropriate s3 headers like setting files to 'public-read' and 'Content-Type'.
 
 Bucket Assets is used in deploys of Artsy apps, but may be useful for you too.
 
 ## Example
 
+Run the CLI in your deployment process. (You may omit these arguments if you use the defaults below.)
+
+````
+node_modules/.bin/bucketassets --files **/public/** --secret s3-secret --key s3-key --bucket force-production
+````
+
+Add the middleware to your app
+
 ````javascript
 var bucketAssets = require('bucket-assets');
-bucketAssets({
-  dir: __dirname + 'public/assets',
-  key: '<s3-key>', // Defaults to process.env.S3_KEY
-  secret: '<s3-secret>', // Defaults to process.env.S3_SECRET
-  bucket: 'flare-production',
-  callback: function(err) {
-    // If no err all assets uploaded to S3 fine!
-  }
-});
+app.use(bucketAssets({
+  // A glob string that defaults to finding all files in "public" folders that are children of
+  //process.cwd() e.g. /public + /components/modal/public
+  files: __dirname + '/**/*/public/**/*',
+  root: 'public', // Defaults to "public". The name of the folder that is the root static directory so relative paths work the same locally as they do on the CDN.
+  key: 's3-key', // Defaults to process.env.S3_KEY
+  secret: 's3-secret', // Defaults to process.env.S3_SECRET
+  bucket: 'force-production', // Defaults to process.env.S3_BUCKET
+  cdnUrl: '//xyz.cloudfront.net/' // Defaults to process.env.CDN_URL
+}));
 ````
 
-or using the CLI
+This provides the view helper to point to the fingerprinted CDN assets if process.env.NODE_ENV=production or process.env.NODE_ENV=staging, otherwise it'll act as a noop that just returns the passed in string.
 
-````
-npm install bucket-assets -g
-bucketassets --dir public/assets --secret foo --key bar --bucket flare-production
+````jade
+head
+  link( type='text/css', rel='stylesheet', href=asset('main.css') )
+body
+  script( src=asset('main.js') )
 ````
 
 ## Contributing

@@ -1,6 +1,6 @@
 {
   "name": "bucket-assets",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "Uploads a folder of static assets to an s3 bucket with convenient assumptions.",
   "keywords": [
     "s3",
@@ -24,8 +24,13 @@
     "node": ">= 0.10.x"
   },
   "scripts": {
-    "test": "make test"
-  },
+  	"test": "make test"
+	},
+	"dependencies": {
+	  "knox": "*",
+	  "glob": "*",
+	  "underscore": "*"
+	},
   "dependencies": {
     "knox": "*",
     "glob": "*",
@@ -36,6 +41,8 @@
     "mocha": "*",
     "should": "*",
     "rewire": "*",
-    "sinon": "*"
+    "sinon": "*",
+    "express": "*",
+    "jade": "*"
   }
 }
