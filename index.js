@@ -6,7 +6,8 @@ var path = require('path'),
     _ = require('underscore'),
     crypto = require('crypto'),
     NODE_ENV = process.env.NODE_ENV,
-    COMMIT_HASH = process.env.COMMIT_HASH;
+    COMMIT_HASH = process.env.COMMIT_HASH,
+    mime = require('mime');
 
 // Middleware to find your uploaded assets based on git hash & uploaded manifest.
 //
@@ -106,9 +107,9 @@ module.exports.upload = function(options) {
         files.forEach(function(filename) {
 
           // Generate headers
-          var contentType = contentTypeMap[
+          var contentType = mime.lookup(
             path.extname(filename.replace('.gz', '').replace('.cgz', ''))
-          ];
+          );
           var headers = {
             'Cache-Control': 'max-age=315360000, public',
             'Content-Type': contentType,
@@ -162,14 +163,4 @@ var setup = function(options, callback) {
   exec('git rev-parse --short HEAD', function(err, gitHash) {
     callback(err, options, client, gitHash);
   });
-};
-
-var contentTypeMap = {
-  '.css': 'text/css',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.js':  'application/javascript',
-  '.ico': 'image/x-icon',
-  '.xml': 'text/xml'
 };

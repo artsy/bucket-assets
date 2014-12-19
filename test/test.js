@@ -132,8 +132,20 @@ describe('bucketAssets', function() {
     });
     putBufferStub.args[0][3]();
     putFileStub.args[0][1].should.equal('/bar-9b57f0be.js');
-    putFileStub.args[1][1].should.equal('/foo-190774dc.js');
-    putFileStub.args[2][1].should.equal('/baz-842ebc9d.js');
+    putFileStub.args[1][1].should.equal('/icons/check.svg');
+    putFileStub.args[2][1].should.equal('/foo-190774dc.js');
+    putFileStub.args[3][1].should.equal('/baz-842ebc9d.js');
+  });
+
+  it('uploads proper svg mime type', function() {
+    bucketAssets.upload({
+      files: __dirname + '/app/**/public/**/*.svg',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production'
+    });
+    putBufferStub.args[0][3]();
+    putFileStub.args[0][2]['Content-Type'].should.equal('image/svg+xml');
   });
 
   context('middleware', function() {
