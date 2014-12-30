@@ -16,7 +16,7 @@ program
 bucketAssets.upload({
   files: program.files,
   root: program.root,
-  key: program.secret,
+  key: program.key,
   secret: program.secret,
   bucket: program.bucket,
   callback: function(err) {
