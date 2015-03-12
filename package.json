@@ -24,7 +24,8 @@
     "node": ">= 0.10.x"
   },
   "scripts": {
-  	"test": "make test"
+  	"test": "mocha test/test.js -r should",
+    "example": "./bin/bucketassets.js && node example/app.js"
 	},
 	"dependencies": {
 	  "knox": "*",
