@@ -120,7 +120,8 @@ module.exports.upload = function(options) {
             'Content-Type': contentType,
             'x-amz-acl': 'public-read'
           };
-          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/))
+          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/)
+            || filename.match(/\.jgz$/))
             headers['Content-Encoding'] = 'gzip';
 
           // Upload file
