@@ -97,6 +97,7 @@ module.exports.upload = function(options) {
       manifestDest,
       {
         'Cache-Control': 'max-age=315360000, public',
+        'Content-Type': 'application/json',
         'x-amz-acl': 'public-read'
       },
       function(err) {
@@ -163,8 +164,8 @@ var setup = function(options, callback) {
     secret: options.secret,
     bucket: options.bucket
   });
-  if (COMMIT_HASH) return callback(null, options, client, COMMIT_HASH);
+  if (COMMIT_HASH) return callback(null, options, client, COMMIT_HASH.trim());
   exec('git rev-parse --short HEAD', function(err, gitHash) {
-    callback(err, options, client, gitHash);
+    callback(err, options, client, gitHash.trim());
   });
 };

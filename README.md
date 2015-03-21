@@ -64,6 +64,12 @@ body
 
 Be sure to set env variables for production/staging if you're relying on the defaults
 
+On your CI machine
+````
+S3_KEY=
+S3_SECRET=
+````
+
 Run with deploy script
 ````
 heroku config:set COMMIT_HASH=$(shell git rev-parse --short HEAD)
