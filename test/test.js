@@ -11,13 +11,11 @@ describe('bucketAssets', function() {
   beforeEach(function() {
     putFileStub = sinon.stub();
     putBufferStub = sinon.stub();
-    getFileStub = sinon.stub();
 
     createClientStub = sinon.stub();
     createClientStub.returns({
       putFile: putFileStub,
-      putBuffer: putBufferStub,
-      getFile: getFileStub
+      putBuffer: putBufferStub
     });
     bucketAssets.__set__('knox', {
       createClient: createClientStub
@@ -163,15 +161,26 @@ describe('bucketAssets', function() {
 
   context('middleware', function() {
 
-    var req, res, next;
+    var req, res, next, endStub, getArgs;
 
     beforeEach(function() {
       req = {};
       res = { locals: {} };
       next = sinon.stub();
+      bucketAssets.__set__('request', {
+        get: function() {
+          getArgs = arguments
+          return {
+            end: endStub = sinon.stub()
+          }
+        }
+      });
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
     });
 
     it('noops for dev', function() {
+      bucketAssets.__set__('NODE_ENV', 'development');
       bucketAssets()(req, res, next);
       res.locals.asset('/foo.js').should.equal('/foo.js');
       next.called.should.be.ok;
@@ -179,13 +188,10 @@ describe('bucketAssets', function() {
 
     it('fetches the manifest and when finished provides a ' +
        'fingerprinting view helper', function() {
-      bucketAssets.__set__('NODE_ENV', 'production');
-      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
-      var emitter = new EventEmitter();
       next.called.should.not.be.ok
-      getFileStub.args[0][1](null, emitter);
-      emitter.emit('data', JSON.stringify({ '/foo.js': '/foo-123.js' }));
-      emitter.emit('end');
+      endStub.args[0][0](null, { text: JSON.stringify({
+        '/foo.js': '/foo-123.js'
+      })});
       next.called.should.be.ok
       res.locals.asset('/foo.js').should.equal('http://cdn.com/foo-123.js');
     });
@@ -193,24 +199,17 @@ describe('bucketAssets', function() {
     it('points to gzipped assets first', function() {
       bucketAssets.__set__('NODE_ENV', 'production');
       bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
-      var emitter = new EventEmitter();
-      next.called.should.not.be.ok
-      getFileStub.args[0][1](null, emitter);
-      emitter.emit('data', JSON.stringify({
+      endStub.args[0][0](null, { text: JSON.stringify({
         '/foo.js': '/foo-123.js',
         '/foo.js.gz': '/foo-456.js.gz'
-      }));
-      emitter.emit('end');
+      })});
       res.locals.asset('/foo.js').should.equal('http://cdn.com/foo-456.js.gz');
     });
 
     it('catches S3 errors', function() {
       bucketAssets.__set__('NODE_ENV', 'production');
       bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
-      var emitter = new EventEmitter();
-      getFileStub.args[0][1](null, emitter);
-      emitter.emit('data', "<error>Thanks for the XML!</error>");
-      emitter.emit('end');
+      endStub.args[0][0](null, { text: "<error>Thanks for the XML!</error>" });
       next.args[0][0].toString()
         .should.equal('SyntaxError: Unexpected token <');
     });
@@ -218,14 +217,14 @@ describe('bucketAssets', function() {
     it('tries to find the manifest by git hash', function() {
       bucketAssets.__set__('NODE_ENV', 'production');
       bucketAssets(req, res, next);
-      getFileStub.args[0][0].should.equal('/manifest-git-hash.json');
+      getArgs[0].should.containEql('/manifest-git-hash.json');
     });
 
     it('first tries to find the manifest by a COMMIT_HASH env var', function() {
       bucketAssets.__set__('NODE_ENV', 'production');
       bucketAssets.__set__('COMMIT_HASH', 'mashy-hasie');
       bucketAssets(req, res, next);
-      getFileStub.args[0][0].should.equal('/manifest-mashy-hasie.json');
+      getArgs[0].should.containEql('/manifest-mashy-hasie.json');
     });
   });
 });

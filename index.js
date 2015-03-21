@@ -7,7 +7,8 @@ var path = require('path'),
     crypto = require('crypto'),
     NODE_ENV = process.env.NODE_ENV,
     COMMIT_HASH = process.env.COMMIT_HASH,
-    mime = require('mime');
+    mime = require('mime'),
+    request = require('superagent');
 
 // Middleware to find your uploaded assets based on git hash & uploaded manifest.
 //
@@ -34,22 +35,18 @@ module.exports = function(options) {
   }
 
   // Fetch the manifest
-  setup(options, function(err, options, client, gitHash) {
+  setup(options, function(err, options, client, hash) {
     opts = options;
     if (err) return manifestCallback(manifestErr = err);
-    client.getFile('/manifest-' + gitHash.trim() + '.json', function(err, res) {
+    request.get(opts.cdnUrl + '/manifest-' + hash + '.json').end(function(err, res) {
       if (err) return manifestCallback(manifestErr = err);
-      var bufs = [];
-      res.on('data', function(d) { bufs.push(d); });
-      res.on('end', function() {
-        try {
-          manifest = JSON.parse(Buffer.concat(bufs).toString());
-          manifestCallback();
-        } catch (err) {
-          console.warn(Buffer.concat(bufs).toString());
-          manifestCallback(manifestErr = err);
-        }
-      });
+      try {
+        manifest = JSON.parse(res.text);
+        manifestCallback();
+      } catch (err) {
+        console.warn(res.text);
+        manifestCallback(manifestErr = err);
+      }
     });
   });
 
@@ -73,7 +70,7 @@ module.exports = function(options) {
 // @param {Object} options See README.md for details
 
 module.exports.upload = function(options) {
-  setup(options, function(err, options, client, gitHash) {
+  setup(options, function(err, options, client, hash) {
     if (err) return options.callback(err);
 
     var files = glob.sync(options.files, { nodir: true }).filter(function(f) {
@@ -94,11 +91,14 @@ module.exports.upload = function(options) {
     });
 
     // Upload the manifest
-    var manifestDest = '/manifest-' + gitHash.trim() + '.json';
+    var manifestDest = '/manifest-' + hash + '.json';
     client.putBuffer(
       JSON.stringify(manifest),
       manifestDest,
-      { 'Cache-Control': 'max-age=315360000, public' },
+      {
+        'Cache-Control': 'max-age=315360000, public',
+        'x-amz-acl': 'public-read'
+      },
       function(err) {
         console.log('Uploaded manifest to ' + options.bucket + manifestDest);
         if (err) return options.callback(err);
@@ -112,16 +112,14 @@ module.exports.upload = function(options) {
 
           // Generate headers
           var contentType = mime.lookup(
-            path.extname(filename.replace('.gz', '').replace('.cgz', '')
-              .replace('.jgz', ''))
+            path.extname(filename.replace('.gz', '').replace('.cgz', ''))
           );
           var headers = {
             'Cache-Control': 'max-age=315360000, public',
             'Content-Type': contentType,
             'x-amz-acl': 'public-read'
           };
-          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/)
-            || filename.match(/\.jgz$/))
+          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/))
             headers['Content-Encoding'] = 'gzip';
 
           // Upload file

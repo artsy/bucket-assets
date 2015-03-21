@@ -60,6 +60,20 @@ body
   script( src=asset('main.js') )
 ````
 
+## With Heroku
+
+Be sure to set env variables for production/staging if you're relying on the defaults
+
+Run with deploy script
+````
+heroku config:set COMMIT_HASH=$(shell git rev-parse --short HEAD)
+````
+
+Set once
+````
+heroku config:set CDN_URL=
+````
+
 ## Contributing
 
 Please fork the project and submit a pull request with tests. Install node modules `npm install` and run tests with `npm test`.
