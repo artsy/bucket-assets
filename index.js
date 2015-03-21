@@ -38,7 +38,7 @@ module.exports = function(options) {
   setup(options, function(err, options, client, hash) {
     opts = options;
     if (err) return manifestCallback(manifestErr = err);
-    request.get(opts.cdnUrl + '/manifest-' + hash + '.json', function(err, res) {
+    request.get(opts.cdnUrl + '/manifest-' + hash + '.json').end(function(err, res) {
       if (err) return manifestCallback(manifestErr = err);
       try {
         manifest = JSON.parse(res.text);
