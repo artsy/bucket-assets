@@ -113,14 +113,16 @@ module.exports.upload = function(options) {
 
           // Generate headers
           var contentType = mime.lookup(
-            path.extname(filename.replace('.gz', '').replace('.cgz', ''))
+            path.extname(filename.replace('.gz', '').replace('.cgz', '')
+              .replace('.jgz', ''))
           );
           var headers = {
             'Cache-Control': 'max-age=315360000, public',
             'Content-Type': contentType,
             'x-amz-acl': 'public-read'
           };
-          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/))
+          if(filename.match(/\.gz$/) || filename.match(/\.cgz$/)
+             || filename.match(/\.jgz$/))
             headers['Content-Encoding'] = 'gzip';
 
           // Upload file
