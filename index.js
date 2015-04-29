@@ -132,7 +132,7 @@ module.exports.upload = function(options) {
             } else {
               console.log('Uploaded ' + filename + ' to ' +
                 options.bucket + s3Path + ' (' + contentType + ')' );
-              cb()
+              cb();
             }
           });
         }, options.callback);
