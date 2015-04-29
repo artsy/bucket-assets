@@ -8,7 +8,8 @@ var path = require('path'),
     NODE_ENV = process.env.NODE_ENV,
     COMMIT_HASH = process.env.COMMIT_HASH,
     mime = require('mime'),
-    request = require('superagent');
+    request = require('superagent'),
+    async = require('async');
 
 // Middleware to find your uploaded assets based on git hash & uploaded manifest.
 //
@@ -105,11 +106,7 @@ module.exports.upload = function(options) {
         if (err) return options.callback(err);
 
         // Upload each file to S3
-        options.callback = _.after(
-          files.length,
-          options.callback || function() {}
-        );
-        files.forEach(function(filename) {
+        async.eachLimit(files, 100, function(filename, cb) {
 
           // Generate headers
           var contentType = mime.lookup(
@@ -135,10 +132,10 @@ module.exports.upload = function(options) {
             } else {
               console.log('Uploaded ' + filename + ' to ' +
                 options.bucket + s3Path + ' (' + contentType + ')' );
-              options.callback()
+              cb();
             }
           });
-        });
+        }, options.callback);
       }
     );
   });
