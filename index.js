@@ -106,7 +106,7 @@ module.exports.upload = function(options) {
         if (err) return options.callback(err);
 
         // Upload each file to S3
-        async.eachLimit(files, 100, function(filename, cb) {
+        async.mapSeries(files, function(filename, cb) {
 
           // Generate headers
           var contentType = mime.lookup(
