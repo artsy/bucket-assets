@@ -129,6 +129,19 @@ describe('bucketAssets', function() {
     manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app-72f6c492.js');
   });
 
+  it('doesnt have to fingerprint files', function() {
+    bucketAssets.upload({
+      files: __dirname + '/assets/**/*',
+      root: 'assets',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production',
+      fingerprint: false
+    });
+    var manifest = JSON.parse(putBufferStub.args[0][0]);
+    manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app.js');
+  });
+
   it('uploads a manifest including cgz/gz', function() {
     bucketAssets.upload({
       secret: 'foobar',
