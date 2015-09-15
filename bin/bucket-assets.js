@@ -20,7 +20,7 @@ bucketAssets.upload({
   key: program.key,
   secret: program.secret,
   bucket: program.bucket,
-  fingerprint: JSON.parse(program.fingerprint),
+  fingerprint: program.fingerprint == 'true',
   callback: function(err) {
     if (err) {
       console.warn("Error uploading assets: " + err);
