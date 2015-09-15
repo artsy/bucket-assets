@@ -47,7 +47,10 @@ app.use(bucketAssets({
   bucket: 'force-production',
 
   // Defaults to process.env.CDN_URL
-  cdnUrl: '//xyz.cloudfront.net/'
+  cdnUrl: '//xyz.cloudfront.net/',
+
+  // Defaults to true. Use `false` to not use fingerprinting.
+  fingerprint: true
 }));
 ````
 
