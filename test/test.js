@@ -11,6 +11,7 @@ describe('bucketAssets', function() {
   beforeEach(function() {
     putFileStub = sinon.stub();
     putBufferStub = sinon.stub();
+
     createClientStub = sinon.stub();
     createClientStub.returns({
       putFile: putFileStub,
@@ -48,13 +49,17 @@ describe('bucketAssets', function() {
     putBufferStub.args[0][3]();
     putFileStub.args[0][0].should.containEql('test/assets/app.css');
     putFileStub.args[0][1].should.containEql('/app-c1920422.css');
+    putFileStub.args[0][3]();
     putFileStub.args[1][0].should.containEql('test/assets/app.js');
     putFileStub.args[1][1].should.containEql('/app-72f6c492.js');
+    putFileStub.args[1][3]();
+    putFileStub.args[2][3]();
+    putFileStub.args[3][3]();
     putFileStub.args[4][0].should.containEql('test/assets/folder_with_file/app.js');
     putFileStub.args[4][1].should.containEql('/folder_with_file/app-72f6c492.js');
   });
 
-  it('calls back putFile errors', function() {
+  it('adds the proper Content-Type header', function() {
     bucketAssets.upload({
       files: __dirname + '/assets/**/*',
       root: 'assets',
@@ -63,22 +68,9 @@ describe('bucketAssets', function() {
       bucket: 'flare-production'
     });
     putBufferStub.args[0][3]();
-    putFileStub.args[0][0].should.containEql('test/assets/app.css');
-  });
-
-  it('adds the proper Content-Type header', function(done) {
-    bucketAssets.upload({
-      files: __dirname + '/assets/**/*',
-      root: 'assets',
-      secret: 'foobar',
-      key: 'baz',
-      bucket: 'flare-production',
-      callback: function(err) {
-        err.should.equal('foo err');
-        done();
-      }
-    });
-    putBufferStub.args[0][3]('foo err');
+    putFileStub.args[0][2]['Content-Type'].should.equal('text/css');
+    putFileStub.args[0][3]();
+    putFileStub.args[1][2]['Content-Type'].should.equal('application/javascript');
   });
 
   it('adds the proper Max-Age header', function() {
@@ -91,6 +83,7 @@ describe('bucketAssets', function() {
       });
       putBufferStub.args[0][3]();
       putFileStub.args[0][2]['Cache-Control'].should.equal('max-age=315360000, public');
+      putFileStub.args[0][3]();
       putFileStub.args[1][2]['Cache-Control'].should.equal('max-age=315360000, public');
   });
 
@@ -103,8 +96,11 @@ describe('bucketAssets', function() {
       bucket: 'flare-production'
     });
     putBufferStub.args[0][3]();
+    putFileStub.args[0][3]();
+    putFileStub.args[1][3]();
     putFileStub.args[2][2]['Content-Type'].should.equal('application/javascript');
     putFileStub.args[2][2]['Content-Encoding'].should.equal('gzip');
+    putFileStub.args[2][3]();
     putFileStub.args[3][2]['Content-Type'].should.equal('application/javascript');
     putFileStub.args[3][2]['Content-Encoding'].should.equal('gzip');
   });
@@ -133,6 +129,19 @@ describe('bucketAssets', function() {
     manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app-72f6c492.js');
   });
 
+  it('doesnt have to fingerprint files', function() {
+    bucketAssets.upload({
+      files: __dirname + '/assets/**/*',
+      root: 'assets',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production',
+      fingerprint: false
+    });
+    var manifest = JSON.parse(putBufferStub.args[0][0]);
+    manifest['/folder_with_file/app.js'].should.equal('/folder_with_file/app.js');
+  });
+
   it('uploads a manifest including cgz/gz', function() {
     bucketAssets.upload({
       secret: 'foobar',
@@ -153,11 +162,17 @@ describe('bucketAssets', function() {
     });
     putBufferStub.args[0][3]();
     putFileStub.args[0][1].should.equal('/bar-9b57f0be.js');
+    putFileStub.args[0][3]();
     putFileStub.args[1][1].should.equal('/icons/check.svg');
+    putFileStub.args[1][3]();
     putFileStub.args[2][1].should.equal('/foo-190774dc.js');
+    putFileStub.args[2][3]();
     putFileStub.args[3][1].should.equal('/app-c175c2f2.css.cgz');
+    putFileStub.args[3][3]();
     putFileStub.args[4][1].should.equal('/app-5e5cf0de.js');
+    putFileStub.args[4][3]();
     putFileStub.args[5][1].should.equal('/app-c175c2f2.js.gz');
+    putFileStub.args[5][3]();
     putFileStub.args[6][1].should.equal('/baz-842ebc9d.js');
   });
 
@@ -238,6 +253,22 @@ describe('bucketAssets', function() {
       bucketAssets.__set__('COMMIT_HASH', 'mashy-hasie');
       bucketAssets(req, res, next);
       getArgs[0].should.containEql('/manifest-mashy-hasie.json');
+    });
+
+    it('calls back putFile errors', function(done) {
+      bucketAssets.upload({
+        files: __dirname + '/assets/**/*',
+        root: 'assets',
+        secret: 'foobar',
+        key: 'baz',
+        bucket: 'flare-production',
+        callback: function(err) {
+          err.should.equal('foo baz');
+          done();
+        }
+      });
+      putBufferStub.args[0][3]();
+      putFileStub.args[0][3]('foo baz');
     });
   });
 });

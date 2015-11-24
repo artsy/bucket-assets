@@ -15,11 +15,12 @@ Run the CLI in your deployment process.
 _You may omit these arguments if you use the defaults below._
 
 ````
-bucketassets \
+bucket-assets \
   --files **/public/** \
   --secret s3-secret \
   --key s3-key \
   --bucket force-production \
+  --fingerprint true
 ````
 
 Add the middleware to your app
@@ -47,7 +48,10 @@ app.use(bucketAssets({
   bucket: 'force-production',
 
   // Defaults to process.env.CDN_URL
-  cdnUrl: '//xyz.cloudfront.net/'
+  cdnUrl: '//xyz.cloudfront.net/',
+
+  // Defaults to true. Use `false` to not use fingerprinting.
+  fingerprint: true
 }));
 ````
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-var program = require('commander')
-  , bucketAssets = require('../')
-  , resolve = require('path').resolve;
+var program = require('commander');
+var bucketAssets = require('../');
+var resolve = require('path').resolve;
 
 program
   .version('0.1.0')
@@ -11,6 +11,7 @@ program
   .option('-k, --key [key]', 'S3 Key')
   .option('-s, --secret [secret]', 'S3 Secret')
   .option('-b, --bucket [name]', 'S3 Bucket name')
+  .option('-fp, --fingerprint [bool]', 'S3 Bucket name')
   .parse(process.argv);
 
 bucketAssets.upload({
@@ -19,6 +20,7 @@ bucketAssets.upload({
   key: program.key,
   secret: program.secret,
   bucket: program.bucket,
+  fingerprint: program.fingerprint == 'false' ? false : true,
   callback: function(err) {
     if (err) {
       console.warn("Error uploading assets: " + err);
