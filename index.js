@@ -73,7 +73,7 @@ module.exports.upload = function(options) {
       return !f.match('node_modules');
     });
     uploadManifest(files, options, function(err, manifest) {
-      if (err) return options.callback(err)
+      if (err) return options.callback(err);
       async.mapSeries(files, function(file, callback) {
         var s3Path = _.last(file.split(options.root));
         var headers = generateHeaders(file);
@@ -82,6 +82,7 @@ module.exports.upload = function(options) {
           if (err) {
             console.warn('Error uploading ' + file + ' to ' +
               options.bucket + s3Path + ': ' + err);
+            callback(err);
           } else {
             console.log('Uploaded ' + file + ' to ' +
               options.bucket + s3Path + ' (' + headers['Content-Type'] + ')');

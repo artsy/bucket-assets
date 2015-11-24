@@ -254,5 +254,21 @@ describe('bucketAssets', function() {
       bucketAssets(req, res, next);
       getArgs[0].should.containEql('/manifest-mashy-hasie.json');
     });
+
+    it('calls back putFile errors', function(done) {
+      bucketAssets.upload({
+        files: __dirname + '/assets/**/*',
+        root: 'assets',
+        secret: 'foobar',
+        key: 'baz',
+        bucket: 'flare-production',
+        callback: function(err) {
+          err.should.equal('foo baz');
+          done();
+        }
+      });
+      putBufferStub.args[0][3]();
+      putFileStub.args[0][3]('foo baz');
+    });
   });
 });
