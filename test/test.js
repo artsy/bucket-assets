@@ -11,7 +11,6 @@ describe('bucketAssets', function() {
   beforeEach(function() {
     putFileStub = sinon.stub();
     putBufferStub = sinon.stub();
-
     createClientStub = sinon.stub();
     createClientStub.returns({
       putFile: putFileStub,
@@ -55,7 +54,7 @@ describe('bucketAssets', function() {
     putFileStub.args[4][1].should.containEql('/folder_with_file/app-72f6c492.js');
   });
 
-  it('adds the proper Content-Type header', function() {
+  it('calls back putFile errors', function() {
     bucketAssets.upload({
       files: __dirname + '/assets/**/*',
       root: 'assets',
@@ -64,8 +63,22 @@ describe('bucketAssets', function() {
       bucket: 'flare-production'
     });
     putBufferStub.args[0][3]();
-    putFileStub.args[0][2]['Content-Type'].should.equal('text/css');
-    putFileStub.args[1][2]['Content-Type'].should.equal('application/javascript');
+    putFileStub.args[0][0].should.containEql('test/assets/app.css');
+  });
+
+  it('adds the proper Content-Type header', function(done) {
+    bucketAssets.upload({
+      files: __dirname + '/assets/**/*',
+      root: 'assets',
+      secret: 'foobar',
+      key: 'baz',
+      bucket: 'flare-production',
+      callback: function(err) {
+        err.should.equal('foo err');
+        done();
+      }
+    });
+    putBufferStub.args[0][3]('foo err');
   });
 
   it('adds the proper Max-Age header', function() {

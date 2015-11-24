@@ -132,10 +132,11 @@ module.exports.upload = function(options) {
             if (err) {
               console.warn('Error uploading ' + filename + ' to ' +
                 options.bucket + s3Path + ': ' + err);
+              options.callback(err);
             } else {
               console.log('Uploaded ' + filename + ' to ' +
                 options.bucket + s3Path + ' (' + contentType + ')' );
-              options.callback()
+              options.callback();
             }
           });
         });
