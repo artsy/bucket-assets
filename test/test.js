@@ -239,7 +239,16 @@ describe('bucketAssets', function() {
       bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
       endStub.args[0][0](null, { text: "<error>Thanks for the XML!</error>" });
       next.args[0][0].toString()
-        .should.equal('SyntaxError: Unexpected token <');
+        .should.containEql('SyntaxError: Unexpected token <');
+    });
+
+    it('noops when failing to fetch from S3', function(done) {
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, (err) => {
+        res.locals.asset('/foo.js').should.equal('/foo.js');
+        done();
+      });
+      endStub.args[0][0](new Error('Fail'));
     });
 
     it('tries to find the manifest by git hash', function() {
