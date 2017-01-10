@@ -214,6 +214,17 @@ describe('bucketAssets', function() {
       next.called.should.be.ok;
     });
 
+    it('can pull the manifest from the environment', function() {
+      bucketAssets.__set__('ASSET_MANIFEST', JSON.stringify({
+        '/foo.js': '/foo-123.js',
+        '/foo.js.gz': '/foo-456.js.gz'
+      }));
+      bucketAssets.__set__('NODE_ENV', 'production');
+      bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
+      res.locals.asset('/foo.js').should.equal('http://cdn.com/foo-456.js.gz');
+      bucketAssets.__set__('ASSET_MANIFEST', null);
+    });
+
     it('fetches the manifest and when finished provides a ' +
        'fingerprinting view helper', function() {
       next.called.should.not.be.ok
