@@ -1,6 +1,6 @@
 {
   "name": "bucket-assets",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Uploads a folder of static assets to an s3 bucket with convenient assumptions.",
   "keywords": [
     "s3",
