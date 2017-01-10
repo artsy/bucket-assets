@@ -76,7 +76,7 @@ S3_SECRET=
 
 Run with deploy script
 ````
-heroku config:set COMMIT_HASH=$(shell git rev-parse --short HEAD)
+heroku config:set ASSET_MANIFEST=$(cat manifest.json)
 ````
 
 Set once

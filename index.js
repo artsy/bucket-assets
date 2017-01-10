@@ -7,6 +7,7 @@ var _ = require('underscore');
 var crypto = require('crypto');
 var NODE_ENV = process.env.NODE_ENV;
 var COMMIT_HASH = process.env.COMMIT_HASH;
+var ASSET_MANIFEST = process.env.ASSET_MANIFEST;
 var mime = require('mime');
 var request = require('superagent');
 var async = require('async');
@@ -22,8 +23,12 @@ module.exports = function(options) {
       res.locals.asset = function(filename) { return filename };
       next();
     }
+  // If the manifest is stored in the environment then parse that into our
+  // `asset` helper
+  if (ASSET_MANIFEST)
+    return assetMiddleware(JSON.parse(ASSET_MANIFEST), options.cdnUrl)
   // Setup callbacks so we can queue requets until we've got the manifest.
-  var manifest, opts, manifestErr, manifestCallbacks = [];
+  var manifest, opts, manifestCallbacks = [];
   var onManifestFetched = function(callback) {
     manifestCallbacks.push(callback);
   };
@@ -35,30 +40,29 @@ module.exports = function(options) {
   // Fetch the manifest
   setup(options, function(err, options) {
     opts = options;
-    if (err) return manifestCallback(manifestErr = err);
-    request.get(opts.cdnUrl + '/manifest-' + options.hash + '.json').end(function(err, res) {
-      if (err) return manifestCallback(manifestErr = err);
-      try {
-        manifest = JSON.parse(res.text);
-        manifestCallback();
-      } catch (err) {
-        console.warn(res.text);
-        manifestCallback(manifestErr = err);
-      }
-    });
+    if (err) return manifestCallback(err);
+    request
+      .get(opts.cdnUrl + '/manifest-' + options.hash + '.json')
+      .end(function(err, res) {
+        if (err) return manifestCallback(err);
+        try {
+          manifest = JSON.parse(res.text);
+          manifestCallback();
+        } catch (err) {
+          console.warn(res.text);
+          manifestCallback(err);
+        }
+      });
   });
   // Once the manifest is fetched attach a helper to lookup the file in the
   // manifest or noop. This will prefer .gz/.cgz/.jgz extensioned versions
   // if they exist.
   return function(req, res, next) {
-    if (manifestErr) return next(manifestErr);
-    res.locals.asset = function(filename) {
-      var manifestFile = manifest[filename + '.gz']  ||
-        manifest[filename + '.cgz'] || manifest[filename + '.jgz'] ||
-        manifest[filename];
-      return manifestFile ? opts.cdnUrl + manifestFile : filename;
-    }
-    manifest ? next() : onManifestFetched(next);
+    res.locals.asset = function(filename) { return filename };
+    onManifestFetched(function(err) {
+      if (err) return next(err);
+      else return assetMiddleware(manifest, opts.cdnUrl)(req, res, next);
+    });
   }
 };
 
@@ -93,6 +97,28 @@ module.exports.upload = function(options) {
     });
   });
 };
+
+// Generate middleware that adds the asset helper to locals based on a manifest
+// and CDN url
+//
+// @param {String} manifest object pointing to fingerprinted assets
+// @param {String} CDN url
+// @return {Function}
+
+var assetMiddleware = function(manifest, cdnUrl) {
+  return function(req, res, next) {
+    res.locals.asset = function(filename) {
+      var manifestFile = (
+        manifest[filename + '.gz']  ||
+        manifest[filename + '.cgz'] ||
+        manifest[filename + '.jgz'] ||
+        manifest[filename]
+      );
+      return manifestFile ? cdnUrl + manifestFile : filename;
+    }
+    next();
+  }
+}
 
 // Given a filename determines the proper S3 headers.
 //
@@ -161,6 +187,12 @@ var uploadManifest = function(files, options, callback) {
       callback(err, manifest);
     }
   );
+  try {
+    fs.writeFileSync(
+      process.cwd() + '/manifest.json',
+      JSON.stringify(manifest)
+    );
+  } catch (e) { console.warn("Failed to write manifest.json") };
   return manifest;
 }
 
