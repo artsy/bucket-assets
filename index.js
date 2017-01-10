@@ -25,8 +25,11 @@ module.exports = function(options) {
     }
   // If the manifest is stored in the environment then parse that into our
   // `asset` helper
-  if (ASSET_MANIFEST)
-    return assetMiddleware(JSON.parse(ASSET_MANIFEST), options.cdnUrl)
+  if (ASSET_MANIFEST) {
+    var manifest = JSON.parse(ASSET_MANIFEST);
+    var cdnUrl = options.cdnUrl || process.env.CDN_URL;
+    return assetMiddleware(manifest, cdnUrl);
+  }
   // Setup callbacks so we can queue requets until we've got the manifest.
   var manifest, opts, manifestCallbacks = [];
   var onManifestFetched = function(callback) {
