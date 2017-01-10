@@ -27,7 +27,7 @@ module.exports = function(options) {
   // `asset` helper
   if (ASSET_MANIFEST) {
     var manifest = JSON.parse(ASSET_MANIFEST);
-    var cdnUrl = options.cdnUrl || process.env.CDN_URL;
+    var cdnUrl = (options && options.cdnUrl) || process.env.CDN_URL;
     return assetMiddleware(manifest, cdnUrl);
   }
   // Setup callbacks so we can queue requets until we've got the manifest.
