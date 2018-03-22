@@ -16,9 +16,9 @@ var async = require('async');
 //
 // @param {Object} options See README.md for details
 
-module.exports = function(options) {
+module.exports = function(options = {}) {
   // If it's not production or staging, just return the noop view helper
-  if (NODE_ENV != 'staging' && NODE_ENV != 'production')
+  if (options.disabled || NODE_ENV !== 'staging' && NODE_ENV !== 'production')
     return function(req, res, next) {
       res.locals.asset = function(filename) { return filename };
       next();

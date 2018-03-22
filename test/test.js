@@ -207,12 +207,23 @@ describe('bucketAssets', function() {
       bucketAssets({ cdnUrl: 'http://cdn.com' })(req, res, next);
     });
 
-    it('noops for dev', function() {
-      bucketAssets.__set__('NODE_ENV', 'development');
-      bucketAssets()(req, res, next);
-      res.locals.asset('/foo.js').should.equal('/foo.js');
-      next.called.should.be.ok;
-    });
+    describe('noops', () => {
+      it('noops for dev', function() {
+        bucketAssets.__set__('NODE_ENV', 'development');
+        bucketAssets()(req, res, next);
+        res.locals.asset('/foo.js').should.equal('/foo.js');
+        next.called.should.be.ok;
+      });
+
+      it('can disable in production', function() {
+        bucketAssets.__set__('NODE_ENV', 'production');
+        bucketAssets({
+          disabled: true
+        })(req, res, next);
+        res.locals.asset('/foo.js').should.equal('/foo.js');
+        next.called.should.be.ok;
+      });
+    })
 
     it('can pull the manifest from the environment', function() {
       bucketAssets.__set__('ASSET_MANIFEST', JSON.stringify({

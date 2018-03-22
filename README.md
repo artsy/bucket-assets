@@ -51,7 +51,10 @@ app.use(bucketAssets({
   cdnUrl: '//xyz.cloudfront.net/',
 
   // Defaults to true. Use `false` to not use fingerprinting.
-  fingerprint: true
+  fingerprint: true,
+
+  // Defaults to false. Useful for debugging app outside of manifest.
+  disabled: false
 }));
 ````
 
