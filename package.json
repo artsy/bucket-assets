@@ -35,7 +35,7 @@
     "glob": "^5.0.5",
     "knox-s3": "^0.9.5",
     "mime": "^1.3.4",
-    "superagent": "^1.2.0",
+    "superagent": "^5.1.0",
     "underscore": "^1.8.3"
   },
   "devDependencies": {
